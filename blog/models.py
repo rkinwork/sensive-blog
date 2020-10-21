@@ -18,12 +18,21 @@ class PostQuerySet(models.QuerySet):
         posts_ids = [post.id for post in posts]
         ids_and_comments = Post.objects.filter(
             id__in=posts_ids).annotate(
-            comments_count=models.Count('comments')).values_list('id', 'comments_count')
+            comments_count=models.Count('comments')).values_list('id',
+                                                                 'comments_count')
         count_for_id = dict(ids_and_comments)
         for post in posts:
             post.comments_count = count_for_id[post.id]
 
         return posts
+
+    def fetch_tags_with_posts_count(self):
+        prefetch_tags_with_cnt = models.Prefetch('tags',
+                                                 queryset=Tag.objects.annotate(
+                                                     posts_count=models.Count(
+                                                         'posts')))
+
+        return self.prefetch_related(prefetch_tags_with_cnt)
 
 
 class Post(models.Model):
